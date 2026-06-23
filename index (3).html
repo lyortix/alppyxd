@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d0b14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>portfolio</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500&family=Space+Grotesk:wght@300;400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --pink:   #f0a6ca;
+  --lilac:  #c9b8f5;
+  --mint:   #a8d8c2;
+  --white:  #f0edf9;
+  --dark:   #0d0b14;
+  --glass:  rgba(255,255,255,0.065);
+  --border: rgba(255,255,255,0.12);
+}
+
+html {
+  height: 100%;
+  height: -webkit-fill-available;
+}
+body {
+  height: 100vh;
+  height: -webkit-fill-available;
+  background: var(--dark);
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ═══ BG VIDEO ═══════════════════════════════════════════ */
+#bg-video {
+  position: fixed;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  opacity: 0.42;
+  filter: saturate(1.25) brightness(0.65);
+}
+
+/* dark vignette */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 70% at 50% 50%,
+      transparent 30%,
+      rgba(13,11,20,0.6) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ═══ ENTER SCREEN ════════════════════════════════════════ */
+#enter-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: rgba(13,11,20,0.92);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  transition: opacity 0.9s ease, visibility 0.9s ease;
+}
+#enter-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.el {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(8.5px,1.8vw,11px);
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.32);
+  animation: blink 2.2s ease-in-out infinite;
+  text-align: center;
+}
+@keyframes blink { 0%,100%{opacity:.32} 50%{opacity:.85} }
+.enter-btn {
+  position: relative;
+  padding: 13px 40px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--glass);
+  color: var(--white);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(12px,2.5vw,14px);
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: border-color 0.3s, transform 0.2s;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+.enter-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(120deg, var(--pink), var(--lilac), var(--mint));
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.enter-btn:hover  { border-color: var(--lilac); transform: scale(1.04); }
+.enter-btn:hover::before { opacity: 0.13; }
+.enter-btn:active { transform: scale(0.96); }
+.enter-btn span   { position: relative; z-index: 1; }
+
+/* ═══ PORTAL CARD (PC) ════════════════════════════════════
+   — görünür yüzey aynı, ama perspective + translateZ ile
+     ekrana gömülmüş gibi durur                           */
+#stage {
+  position: relative;
+  z-index: 2;
+  perspective: 900px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  /* boşluk */
+  gap: clamp(16px, 2.4vh, 26px);
+  padding: clamp(28px,4vw,52px) clamp(24px,3.5vw,48px);
+
+  /* glass card */
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 28px;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04) inset,
+    0 30px 80px rgba(0,0,0,0.55),
+    0  0  120px rgba(201,184,245,0.07);
+
+  /* portal tilt — sadece PC */
+  transform: rotateX(4deg) rotateY(0deg) translateZ(-18px);
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(.22,1,.36,1), box-shadow 0.6s;
+
+  opacity: 0;
+  transition: opacity 1s ease 0.15s,
+              transform 0.6s cubic-bezier(.22,1,.36,1),
+              box-shadow 0.6s;
+
+  width: clamp(320px, 80vw, 560px);
+}
+#card.visible {
+  opacity: 1;
+  transform: rotateX(4deg) rotateY(0deg) translateZ(-18px);
+}
+
+/* hover → portal'dan dışarı çıkıyor */
+@media (hover: hover) {
+  #card:hover {
+    transform: rotateX(0deg) rotateY(0deg) translateZ(0px);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.08) inset,
+      0 40px 100px rgba(0,0,0,0.6),
+      0  0  180px rgba(201,184,245,0.12);
+  }
+}
+
+/* ═══ TABLET & MOBİL — kart yok, sadece içerik ══════════ */
+@media (max-width: 767px) {
+  #card {
+    background: transparent;
+    border: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+    border-radius: 0;
+    transform: none !important;
+    width: 100%;
+    padding: 0 20px;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(90px, env(safe-area-inset-bottom));
+  }
+  body {
+    align-items: center;
+    justify-content: center;
+  }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  #card {
+    width: clamp(360px, 72vw, 500px);
+    padding: clamp(28px,3.5vw,44px);
+    transform: rotateX(2deg) translateZ(-10px);
+  }
+  #card.visible { transform: rotateX(2deg) translateZ(-10px); }
+  #card:hover   { transform: none !important; }
+}
+
+/* ═══ AVATAR ══════════════════════════════════════════════ */
+.avatar-wrap {
+  position: relative;
+  width:  clamp(86px, 16vw, 112px);
+  height: clamp(86px, 16vw, 112px);
+  flex-shrink: 0;
+}
+.avatar-ring {
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(var(--pink), var(--lilac), var(--mint), var(--pink));
+  animation: spin 6s linear infinite;
+  filter: blur(1px);
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.avatar-inner {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: #1a1626;
+  border: 3px solid var(--dark);
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.avatar-inner img { width:100%; height:100%; object-fit:cover; }
+.avatar-ph {
+  font-size: clamp(32px,8vw,44px);
+  filter: drop-shadow(0 0 8px var(--lilac));
+}
+
+/* ═══ İSİM & BİO ═════════════════════════════════════════ */
+.info { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(16px, 3.5vw, 22px);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+.bio {
+  font-size: clamp(10.5px, 2vw, 12.5px);
+  color: rgba(255,255,255,0.38);
+  letter-spacing: 0.07em;
+  text-align: center;
+}
+
+/* ═══ SOSYAL LİNKLER ═════════════════════════════════════ */
+.links-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;          /* tek satır — 5 buton sığar */
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  /* kartın padding'inden taşmasın */
+  overflow: visible;
+}
+
+/* küçük ekranda wrap izin ver */
+@media (max-width: 480px) {
+  .links-row { flex-wrap: wrap; gap: 7px; }
+}
+
+.link-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  /* padding sabit küçük — büyük ekranda pill-font büyür */
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255,255,255,0.72);
+  font-size: clamp(10px, 1.2vw, 12px);
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+  overflow: hidden;
+  user-select: none;
+  /* taşmaması için shrink izni var */
+  flex: 0 1 auto;
+  min-width: 0;
+  transition:
+    transform 0.25s cubic-bezier(.34,1.56,.64,1),
+    border-color 0.25s,
+    color 0.25s,
+    box-shadow 0.25s;
+}
+
+/* liquid blob */
+.link-pill::before {
+  content: '';
+  position: absolute;
+  width: 130%; height: 220%;
+  top: -60%; left: -15%;
+  border-radius: 42%;
+  opacity: 0;
+  transition: opacity 0.45s, transform 0.55s;
+  transform: translateY(65%) rotate(12deg);
+}
+.link-pill:hover, .link-pill:focus-visible {
+  transform: translateY(-3px) scale(1.07);
+  color: #fff;
+}
+.link-pill:hover::before { opacity: 0.15; transform: translateY(18%) rotate(5deg); }
+.link-pill:active         { transform: scale(0.94) !important; }
+
+/* platform renkler */
+.pill-yt     { --acc:#ff4040; }
+.pill-yt::before     { background: var(--acc); }
+.pill-yt:hover       { border-color:var(--acc); box-shadow:0 8px 26px rgba(255,64,64,.2); }
+
+.pill-music  { --acc:#fc3c44; }
+.pill-music::before  { background: var(--acc); }
+.pill-music:hover    { border-color:var(--acc); box-shadow:0 8px 26px rgba(252,60,68,.2); }
+
+.pill-reddit { --acc:#ff6314; }
+.pill-reddit::before { background: var(--acc); }
+.pill-reddit:hover   { border-color:var(--acc); box-shadow:0 8px 26px rgba(255,99,20,.2); }
+
+
+.pill-dc     { --acc:#7289da; }
+.pill-dc::before     { background: var(--acc); }
+.pill-dc:hover       { border-color:var(--acc); box-shadow:0 8px 26px rgba(114,137,218,.2); }
+
+.pill-steam  { --acc:#66c0f4; }
+.pill-steam::before  { background: var(--acc); }
+.pill-steam:hover    { border-color:var(--acc); box-shadow:0 8px 26px rgba(102,192,244,.2); }
+
+/* ikon (img veya emoji fallback) */
+.pill-icon {
+  width:  15px;
+  height: 15px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index:1; flex-shrink:0;
+}
+.pill-icon img {
+  width:100%; height:100%; object-fit:contain;
+  filter: brightness(0) invert(1);
+  opacity: 0.82;
+  transition: opacity 0.2s, filter 0.2s;
+}
+.link-pill:hover .pill-icon img { opacity:1; filter:none; }
+.pill-icon .emoji { font-size:clamp(13px,2.8vw,17px); line-height:1; }
+.pill-text { position:relative; z-index:1; }
+
+/* ═══ VOLUME ══════════════════════════════════════════════ */
+#vol-ctrl {
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom, 20px));
+  right:  max(20px, env(safe-area-inset-right,  20px));
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: rgba(255,255,255,0.055);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 9px 14px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.6s 0.7s, transform 0.6s 0.7s;
+}
+#vol-ctrl.show { opacity:1; transform:translateY(0); }
+#vol-icon { font-size:14px; cursor:pointer; user-select:none; touch-action:manipulation; }
+#vol-slider {
+  -webkit-appearance: none; appearance: none;
+  width: clamp(56px,12vw,85px);
+  height: 3px; border-radius:999px;
+  background: var(--border);
+  outline: none; cursor:pointer;
+}
+#vol-slider::-webkit-slider-thumb {
+  -webkit-appearance:none;
+  width:13px; height:13px; border-radius:50%;
+  background: var(--lilac);
+  border: 2px solid var(--dark);
+  box-shadow: 0 0 5px var(--lilac);
+  cursor: grab;
+}
+#vol-slider::-moz-range-thumb {
+  width:13px; height:13px; border-radius:50%;
+  background: var(--lilac); border:2px solid var(--dark);
+}
+
+/* ═══ PARTICLES ═══════════════════════════════════════════ */
+.particle {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  animation: floatup linear infinite;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+@keyframes floatup {
+  0%   { transform:translateY(0) scale(1);   opacity:0; }
+  10%  { opacity:.48; }
+  88%  { opacity:.12; }
+  100% { transform:translateY(-110vh) scale(.35); opacity:0; }
+}
+
+/* ═══ BG HINT ═════════════════════════════════════════════ */
+#hint {
+  position:fixed;
+  bottom: max(20px, env(safe-area-inset-bottom,20px));
+  left:   max(20px, env(safe-area-inset-left,  20px));
+  z-index:10;
+  font-size:9px; letter-spacing:.15em;
+  color:rgba(255,255,255,.18);
+  font-family:'Space Grotesk',sans-serif;
+  opacity:0; transition:opacity .6s 1s;
+}
+#hint.show { opacity:1; }
+
+/* ═══ LANDSCAPE PHONE ════════════════════════════════════ */
+@media (max-height:480px) and (orientation:landscape) {
+  #card { flex-direction:row; flex-wrap:wrap; padding:14px 20px; gap:14px; }
+  .avatar-wrap { width:70px; height:70px; }
+  .links-row { flex-wrap:wrap; }
+}
+
+/* ═══ MOTION REDUCE ══════════════════════════════════════ */
+@media (prefers-reduced-motion:reduce) {
+  .avatar-ring,.particle { animation:none; }
+  * { transition-duration:.01ms !important; }
+}
+
+::-webkit-scrollbar { display:none; }
+</style>
+</head>
+<body>
+
+<!-- ══ ARKAPLAN VİDEO → assets/media/bg.mp4 ══════════════ -->
+<video id="bg-video" autoplay muted loop playsinline>
+  <source src="assets/media/bg.mp4" type="video/mp4">
+</video>
+
+<!-- ══ ENTER OVERLAY ══════════════════════════════════════ -->
+<div id="enter-screen">
+  <span class="el">click to enter</span>
+  <button class="enter-btn" id="enter-btn"><span>✦ enter</span></button>
+  <span class="el" style="font-size:8px;letter-spacing:.26em;margin-top:2px">
+    ses açılacak &nbsp;·&nbsp; audio will play
+  </span>
+</div>
+
+<!-- ══ PORTAL STAGE ═══════════════════════════════════════ -->
+<div id="stage">
+<div id="card">
+
+  <!-- AVATAR → assets/media/photo.jpg -->
+  <div class="avatar-wrap">
+    <div class="avatar-ring"></div>
+    <div class="avatar-inner">
+      <img src="assets/media/photo.jpg" alt="avatar"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <span class="avatar-ph" style="display:none">🌸</span>
+    </div>
+  </div>
+
+  <!-- İSİM & BİO -->
+  <div class="info">
+    <div class="name">alppyxd</div>
+    <div class="bio">i wander under the clouds</div>
+  </div>
+
+  <!-- ══ SOSYAL BUTONLAR
+       İkonlar → assets/icons/
+         youtube.png · music.png · reddit.png
+         instagram.png · discord.png · steam.png
+       href → kendininkilerle değiştir              ════════ -->
+  <div class="links-row">
+
+    <a href="https://youtube.com/@lyortiix" target="_blank" rel="noopener" class="link-pill pill-yt">
+      <span class="pill-icon">
+        <img src="assets/icons/youtube.png" alt=""
+             onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+        <span class="emoji" style="display:none">▶</span>
+      </span>
+      <span class="pill-text">youtube</span>
+    </a>
+
+   <!--
+    <a href="https://music.apple.com/profile/SENIN_PROFIL" target="_blank" rel="noopener" class="link-pill pill-music">
+      <span class="pill-icon">
+        <img src="assets/icons/music.png" alt=""
+             onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+        <span class="emoji" style="display:none">♫</span>
+      </span>
+      <span class="pill-text">music</span>
+    </a> 
+  -->
+
+    <a href="https://reddit.com/u/lyortix" target="_blank" rel="noopener" class="link-pill pill-reddit">
+      <span class="pill-icon">
+        <img src="assets/icons/reddit.png" alt=""
+             onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+        <span class="emoji" style="display:none">👾</span>
+      </span>
+      <span class="pill-text">reddit</span>
+    </a>
+
+    <a href="https://discord.gg/hesperid" target="_blank" rel="noopener" class="link-pill pill-dc">
+      <span class="pill-icon">
+        <img src="assets/icons/discord.png" alt=""
+             onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+        <span class="emoji" style="display:none">⊹</span>
+      </span>
+      <span class="pill-text">discord</span>
+    </a>
+
+    <a href="https://steamcommunity.com/id/alppyxd/" target="_blank" rel="noopener" class="link-pill pill-steam">
+      <span class="pill-icon">
+        <img src="assets/icons/steam.png" alt=""
+             onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+        <span class="emoji" style="display:none">⬡</span>
+      </span>
+      <span class="pill-text">steam</span>
+    </a>
+
+  </div>
+</div><!-- #card -->
+</div><!-- #stage -->
+
+<!-- VOLUME -->
+<div id="vol-ctrl">
+  <span id="vol-icon">🔊</span>
+  <input type="range" id="vol-slider" min="0" max="100" value="40">
+</div>
+<div id="hint">X</div>
+
+<script>
+/* ══ AUDIO → assets/media/music.mp3 ══════════════════════ */
+const audio = new Audio('assets/media/music.mp3');
+audio.loop = true; audio.volume = 0.4;
+
+const $  = id => document.getElementById(id);
+const enterBtn = $('enter-btn'), enterScr = $('enter-screen'),
+      card = $('card'), volCtrl = $('vol-ctrl'),
+      hint = $('hint'), slider = $('vol-slider'),
+      icon = $('vol-icon'), vid = $('bg-video');
+
+/* ── ENTER ── */
+enterBtn.addEventListener('click', () => {
+  audio.play().catch(()=>{});
+  vid.muted = false; vid.volume = 0.03;
+  enterScr.classList.add('hidden');
+  card.classList.add('visible');
+  volCtrl.classList.add('show');
+  hint.classList.add('show');
+  spawnParticles();
+});
+
+
+/* ── PORTAL MOUSE TILT (PC only) ── */
+const stage = $('stage');
+if (window.matchMedia('(hover:hover)').matches) {
+  document.addEventListener('mousemove', e => {
+    if (!card.classList.contains('visible')) return;
+    const cx = window.innerWidth  / 2;
+    const cy = window.innerHeight / 2;
+    const dx = (e.clientX - cx) / cx; // -1 … 1
+    const dy = (e.clientY - cy) / cy;
+    card.style.transform =
+      `rotateX(${-dy * 4 + 2}deg) rotateY(${dx * 4}deg) translateZ(-10px)`;
+  });
+  document.addEventListener('mouseleave', () => {
+    card.style.transform = 'rotateX(4deg) rotateY(0deg) translateZ(-18px)';
+  });
+}
+
+/* ── PILL WOBBLE (desktop) ── */
+if (!('ontouchstart' in window)) {
+  document.querySelectorAll('.link-pill').forEach(p => {
+    p.addEventListener('mouseenter', () => {
+      p.animate([
+        {transform:'translateY(-3px) scale(1.07) rotate(-1deg)'},
+        {transform:'translateY(-3px) scale(1.07) rotate(1deg)'},
+        {transform:'translateY(-3px) scale(1.07) rotate(0deg)'},
+      ], {duration:260, easing:'ease'});
+    });
+  });
+}
+
+/* ── PARTICLES ── */
+const COLS = ['#f0a6ca','#c9b8f5','#a8d8c2','#ffe4b5','#b0e0ff'];
+const mobile = () => window.innerWidth < 768;
+
+function spawnParticles() {
+  const n = mobile() ? 10 : 20;
+  for (let i=0;i<n;i++) setTimeout(mkP, i*300);
+  setInterval(mkP, mobile() ? 1600 : 950);
+}
+function mkP() {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  const s = Math.random()*5+3;
+  Object.assign(p.style, {
+    width: s+'px', height: s+'px',
+    left: Math.random()*100+'vw', bottom: '-20px',
+    background: COLS[Math.random()*COLS.length|0],
+    filter: `blur(${Math.random()*1.4}px)`,
+    animationDuration: (Math.random()*12+8)+'s',
+    animationDelay:    (Math.random()*2)+'s',
+  });
+  document.body.appendChild(p);
+  setTimeout(()=>p.remove(), 22000);
+}
+</script>
+</body>
+</html>
