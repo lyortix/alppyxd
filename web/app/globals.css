@@ -1,0 +1,292 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: #e8dcc8;
+  color: #3a2e2c;
+}
+
+/* ---------- Login screen ---------- */
+
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 20%, #f7c9a3 0%, #e89bb0 55%, #c98fa6 100%);
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: #fff8ee;
+  border-radius: 22px;
+  padding: 32px 28px;
+  box-shadow: 0 20px 60px rgba(80, 40, 40, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-card h1 {
+  margin: 0 0 4px;
+  font-size: 28px;
+  color: #a85a63;
+  text-align: center;
+}
+
+.login-tagline {
+  margin: 0 0 18px;
+  text-align: center;
+  color: #8a6f63;
+  font-size: 14px;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8a5a4c;
+  margin-top: 10px;
+}
+
+.text-input {
+  border: 2px solid #f0ddc8;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 15px;
+  outline: none;
+  background: #fffdf9;
+  color: #3a2e2c;
+}
+
+.text-input:focus {
+  border-color: #e0a3ae;
+}
+
+.age-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 8px 0 4px;
+}
+
+.age-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: #f0ddc8;
+  color: #8a5a4c;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.age-btn:hover {
+  background: #e6cba9;
+}
+
+.age-value {
+  font-size: 22px;
+  font-weight: 700;
+  min-width: 36px;
+  text-align: center;
+}
+
+.age-warning {
+  margin: 0 0 4px;
+  color: #b34a4a;
+  font-size: 12px;
+  text-align: center;
+}
+
+.enter-btn {
+  margin-top: 16px;
+  padding: 12px;
+  border: none;
+  border-radius: 14px;
+  background: #d97b6c;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.enter-btn:disabled {
+  background: #d9c3b9;
+  cursor: not-allowed;
+}
+
+.enter-btn:not(:disabled):hover {
+  opacity: 0.9;
+}
+
+.privacy-note {
+  margin-top: 16px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #a08b7f;
+  text-align: center;
+}
+
+/* ---------- Game shell ---------- */
+
+.game-shell {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #4a3a35;
+  overflow: hidden;
+}
+
+.game-canvas {
+  line-height: 0;
+}
+
+.game-canvas canvas {
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- HUD ---------- */
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 16px;
+}
+
+.hud-hint {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 247, 234, 0.85);
+  color: #3a2e2c;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.hud-house-panel {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 640px;
+  background: rgba(255, 248, 238, 0.95);
+  border-radius: 18px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hud-house-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hud-house-name {
+  font-weight: 700;
+  color: #a85a63;
+}
+
+.hud-house-count {
+  font-size: 12px;
+  color: #8a6f63;
+  background: #f0ddc8;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.hud-leave-btn {
+  margin-left: auto;
+  border: none;
+  background: #d97b6c;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.hud-occupants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hud-occupant-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #f0ddc8;
+  border-radius: 999px;
+  padding: 4px 6px 4px 12px;
+  font-size: 12px;
+}
+
+.hud-report-btn {
+  border: none;
+  background: transparent;
+  color: #b34a4a;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 4px;
+}
+
+.hud-chat-row {
+  display: flex;
+  gap: 8px;
+}
+
+.hud-chat-input {
+  flex: 1;
+}
+
+.hud-send-btn {
+  border: none;
+  background: #7fa7a3;
+  color: white;
+  padding: 0 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.hud-error-toast {
+  pointer-events: none;
+  position: absolute;
+  top: 60px;
+  background: rgba(179, 74, 74, 0.9);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.privacy-footer {
+  pointer-events: none;
+  margin-top: 10px;
+  font-size: 10px;
+  color: rgba(255, 247, 234, 0.7);
+  text-align: center;
+  max-width: 480px;
+}
