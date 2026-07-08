@@ -5,6 +5,8 @@ import { bus, BusEvents } from "@/game/net/bus";
 import { TravelPicker } from "./TravelPicker";
 import { ChatPanel } from "./ChatPanel";
 import { EmoteBar } from "./EmoteBar";
+import { SettingsMenu } from "./SettingsMenu";
+import { EventToast } from "./EventToast";
 
 /**
  * React overlay above the Phaser canvas: location badge, travel picker,
@@ -51,6 +53,8 @@ export function HUD() {
         <>
           <ChatPanel />
           <EmoteBar />
+          <SettingsMenu />
+          <EventToast />
         </>
       )}
 

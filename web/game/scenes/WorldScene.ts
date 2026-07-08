@@ -7,6 +7,7 @@ import { PlayerActor } from "../entities/PlayerActor";
 import { drawGround, drawLightOverlay } from "../render/ground";
 import { buildWorld, type BuiltWorld } from "../systems/worldBuilder";
 import { BubbleSystem } from "../systems/bubbles";
+import { WeatherSystem } from "../systems/weather";
 import { bus, BusEvents } from "../net/bus";
 import { PLAYER_SPEED, MOVE_SEND_INTERVAL_MS, GAME_BG_COLOR, PRESENCE_POLL_MS } from "../config";
 
@@ -44,6 +45,7 @@ export class WorldScene extends Phaser.Scene {
   private keys!: MoveKeys;
   private world?: BuiltWorld;
   private bubbles?: BubbleSystem;
+  private weather?: WeatherSystem;
   private signTexts: Phaser.GameObjects.Text[] = [];
   private lastSent = { x: 0, y: 0, dir: "down", moving: false };
   private nextSendAt = 0;
@@ -96,6 +98,9 @@ export class WorldScene extends Phaser.Scene {
     this.world = buildWorld(this, this.mapDef);
     drawLightOverlay(this, this.mapDef);
     this.bubbles = new BubbleSystem(this);
+    this.weather = new WeatherSystem(this);
+    this.weather.set(this.mapDef.weather);
+    this.addVignette();
 
     // Sign bubbles: hidden until the player walks close.
     this.signTexts = this.mapDef.signs.map((s) =>
@@ -160,7 +165,9 @@ export class WorldScene extends Phaser.Scene {
       mapId: this.mapDef.id,
       label: this.mapDef.label,
       kind: this.mapDef.kind,
+      ambience: this.mapDef.ambience,
     });
+    bus.emit("weather:changed", { weather: this.mapDef.weather });
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.teardown());
   }
@@ -241,6 +248,17 @@ export class WorldScene extends Phaser.Scene {
     });
     room.onMessage("moderation-ack", () => {});
 
+    // Live weather + ambient world events from room state.
+    $(room.state).listen("weather", (weather: string) => {
+      if (this.destroyed) return;
+      this.weather?.set(weather);
+      bus.emit("weather:changed", { weather });
+    });
+    $(room.state).listen("eventText", (text: string) => {
+      if (this.destroyed) return;
+      bus.emit(BusEvents.EventAnnounce, { text });
+    });
+
     room.onLeave(() => {
       if (!this.destroyed && !this.traveling) {
         bus.emit(BusEvents.GameError, { message: "Connection lost. Refresh to rejoin." });
@@ -273,6 +291,33 @@ export class WorldScene extends Phaser.Scene {
     } catch {
       // presence is cosmetic — ignore transient failures
     }
+  }
+
+  /** Soft radial vignette pinned to the camera — pure mood, nearly free. */
+  private addVignette() {
+    if (!this.textures.exists("fx-vignette")) {
+      const size = 512;
+      const tex = this.textures.createCanvas("fx-vignette", size, size);
+      if (tex) {
+        const ctx = tex.getContext();
+        const grad = ctx.createRadialGradient(size / 2, size / 2, size * 0.32, size / 2, size / 2, size * 0.72);
+        grad.addColorStop(0, "rgba(0,0,0,0)");
+        grad.addColorStop(1, "rgba(12,10,20,0.5)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, size, size);
+        tex.refresh();
+      }
+    }
+    const img = this.add
+      .image(0, 0, "fx-vignette")
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(130000)
+      .setAlpha(0.8);
+    const fit = () => img.setDisplaySize(this.scale.width, this.scale.height);
+    fit();
+    this.scale.on(Phaser.Scale.Events.RESIZE, fit);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, fit));
   }
 
   // -------------------------------------------------------------------------
@@ -412,5 +457,7 @@ export class WorldScene extends Phaser.Scene {
     this.remotes.clear();
     this.bubbles?.destroy();
     this.bubbles = undefined;
+    this.weather?.destroy();
+    this.weather = undefined;
   }
 }

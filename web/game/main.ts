@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { WorldScene } from "./scenes/WorldScene";
+import { AudioSystem } from "./systems/audio";
 import type { JoinProfile } from "./net/connection";
 import { GAME_BG_COLOR } from "./config";
 
@@ -24,6 +25,9 @@ export function createGame(parent: HTMLElement, profile: JoinProfile, mapId: str
   });
   game.registry.set("profile", profile);
   game.scene.add("World", WorldScene, true, { mapId });
+  // App-lifetime soundscape: survives map travel so the music never restarts.
+  const audio = new AudioSystem();
+  game.events.once(Phaser.Core.Events.DESTROY, () => audio.destroy());
   // Debug/testing handle (also handy in the browser console).
   (window as unknown as Record<string, unknown>).__LOFI__ = game;
   return game;
