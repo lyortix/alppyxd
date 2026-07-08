@@ -24,5 +24,7 @@ export function createGame(parent: HTMLElement, profile: JoinProfile, mapId: str
   });
   game.registry.set("profile", profile);
   game.scene.add("World", WorldScene, true, { mapId });
+  // Debug/testing handle (also handy in the browser console).
+  (window as unknown as Record<string, unknown>).__LOFI__ = game;
   return game;
 }

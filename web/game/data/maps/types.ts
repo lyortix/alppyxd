@@ -11,7 +11,6 @@ export type WeatherKind = "clear" | "rain" | "snow";
 export type PropType =
   | "tree"
   | "pine"
-  | "palm"
   | "lamp"
   | "neonlamp"
   | "bench"
@@ -20,7 +19,7 @@ export type PropType =
   | "snowman"
   | "puddle"
   | "vending"
-  | "planter"
+  | "umbrella"   // patio umbrella (rainy city / rooftop)
   | "table"      // interior: café table with chairs
   | "counter"    // interior: café/arcade counter
   | "arcadecab"  // interior: arcade cabinet
@@ -64,6 +63,8 @@ export interface PortalDef {
   h: number;
   toMap: string;
   label: string;
+  /** Where the traveller appears in the destination (defaults to its spawn). */
+  spawnAt?: { x: number; y: number };
 }
 
 export interface SignDef {
