@@ -20,7 +20,8 @@ export function createGame(parent: HTMLElement, profile: JoinProfile, mapId: str
       mode: Phaser.Scale.RESIZE,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    render: { antialias: true, pixelArt: false },
+    // preserveDrawingBuffer lets photo mode grab the canvas as a PNG.
+    render: { antialias: true, pixelArt: false, preserveDrawingBuffer: true },
     scene: [],
   });
   game.registry.set("profile", profile);

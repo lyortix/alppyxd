@@ -8,15 +8,20 @@ import { EmoteBar } from "./EmoteBar";
 import { SettingsMenu } from "./SettingsMenu";
 import { EventToast } from "./EventToast";
 import { PlayerSheet } from "./PlayerSheet";
+import { PhotoMode } from "./PhotoMode";
+import { Joystick } from "./Joystick";
 
 /**
- * React overlay above the Phaser canvas: location badge, travel picker,
- * connection errors. Chat, emotes and settings arrive with their phases.
+ * React overlay above the Phaser canvas: location badge, travel picker, chat,
+ * emotes, settings, world-event toasts, the player action sheet, the touch
+ * joystick and photo mode. Everything except photo mode's own controls hides
+ * while photo mode is active so screenshots stay clean.
  */
 export function HUD() {
   const [location, setLocation] = useState<{ mapId: string; label: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showTravel, setShowTravel] = useState(false);
+  const [photo, setPhoto] = useState(false);
 
   useEffect(() => {
     const offs = [
@@ -31,7 +36,7 @@ export function HUD() {
 
   return (
     <div className="pointer-events-none absolute inset-0 text-[#f2ecdf]">
-      {location && (
+      {location && !photo && (
         <div className="absolute top-4 left-4 flex items-center gap-2">
           <div className="rounded-full bg-[#1c1a24]/70 backdrop-blur border border-white/10 px-4 py-1.5 text-sm">
             📍 {location.label}
@@ -46,19 +51,22 @@ export function HUD() {
         </div>
       )}
 
-      {showTravel && location && (
+      {showTravel && location && !photo && (
         <TravelPicker currentMapId={location.mapId} onClose={() => setShowTravel(false)} />
       )}
 
-      {location && (
+      {location && !photo && (
         <>
           <ChatPanel />
           <EmoteBar />
           <SettingsMenu />
           <EventToast />
           <PlayerSheet />
+          <Joystick />
         </>
       )}
+
+      {location && <PhotoMode onToggle={setPhoto} />}
 
       {error && (
         <div className="absolute inset-x-0 top-1/3 flex justify-center px-4">

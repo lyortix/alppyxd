@@ -24,8 +24,8 @@ const EVENTS: WorldEvent[] = [
   { text: "🍜 The café put a fresh pot on the stove", durationMs: 60_000 },
 ];
 
-const MIN_GAP_MS = 3 * 60_000;
-const MAX_GAP_MS = 6 * 60_000;
+const MIN_GAP_MS = Number(process.env.EVENT_MIN_GAP_MS) || 3 * 60_000;
+const MAX_GAP_MS = Number(process.env.EVENT_MAX_GAP_MS) || 6 * 60_000;
 
 export function scheduleWorldEvents(room: Room<WorldState>): () => void {
   const baseWeather = room.state.weather;

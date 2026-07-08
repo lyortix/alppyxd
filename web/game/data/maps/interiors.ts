@@ -40,9 +40,27 @@ export const cafeMap: MapDef = {
   portals: [
     { x: 400, y: 680, w: 160, h: 24, toMap: "sunset", label: "back outside", spawnAt: { x: 740, y: 740 } },
   ],
-  signs: [{ x: 620, y: 280, text: "today's special: honey oat latte ☕" }],
+  signs: [{ x: 620, y: 320, text: "today's special: honey oat latte ☕" }],
   colliders: [{ x: 0, y: 0, w: 960, h: 180 }],
-  npcs: [],
+  npcs: [
+    {
+      id: "owner",
+      name: "café owner",
+      kind: "human",
+      body: 0,
+      palette: 2,
+      accessory: 4,
+      x: 480,
+      y: 360,
+      wander: 0,
+      lines: [
+        "welcome in! grab any seat you like.",
+        "first cup's on the house. it always is.",
+        "quiet today, or busy — either way you're good company.",
+        "the rain outside makes the inside cozier, don't you think?",
+      ],
+    },
+  ],
   ambience: "cafe",
 };
 

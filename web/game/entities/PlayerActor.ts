@@ -84,6 +84,10 @@ export class PlayerActor {
     this.label.setText(name);
   }
 
+  setLabelVisible(visible: boolean) {
+    this.label.setVisible(visible);
+  }
+
   /** Applies a fresh server snapshot (remote actors). */
   applyState(state: ActorState) {
     this.targetX = state.x;

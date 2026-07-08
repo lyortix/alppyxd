@@ -8,6 +8,7 @@ import { drawGround, drawLightOverlay } from "../render/ground";
 import { buildWorld, type BuiltWorld } from "../systems/worldBuilder";
 import { BubbleSystem } from "../systems/bubbles";
 import { WeatherSystem } from "../systems/weather";
+import { NpcSystem } from "../systems/npcs";
 import { bus, BusEvents } from "../net/bus";
 import { PLAYER_SPEED, MOVE_SEND_INTERVAL_MS, GAME_BG_COLOR, PRESENCE_POLL_MS } from "../config";
 
@@ -46,6 +47,7 @@ export class WorldScene extends Phaser.Scene {
   private world?: BuiltWorld;
   private bubbles?: BubbleSystem;
   private weather?: WeatherSystem;
+  private npcs?: NpcSystem;
   private signTexts: Phaser.GameObjects.Text[] = [];
   private lastSent = { x: 0, y: 0, dir: "down", moving: false };
   private nextSendAt = 0;
@@ -54,6 +56,8 @@ export class WorldScene extends Phaser.Scene {
   private traveling = false;
   private portalLockUntil = 0;
   private destroyed = false;
+  private joy = { x: 0, y: 0 };
+  private photoMode = false;
 
   constructor() {
     super("World");
@@ -100,6 +104,7 @@ export class WorldScene extends Phaser.Scene {
     this.bubbles = new BubbleSystem(this);
     this.weather = new WeatherSystem(this);
     this.weather.set(this.mapDef.weather);
+    this.npcs = new NpcSystem(this, this.mapDef, (actor, text) => this.bubbles?.say(actor, text));
     this.addVignette();
 
     // Sign bubbles: hidden until the player walks close.
@@ -164,7 +169,11 @@ export class WorldScene extends Phaser.Scene {
       }),
       bus.on(BusEvents.EmoteSend, (p: { emote: string }) => {
         this.room?.send("emote", { emote: p.emote });
-      })
+      }),
+      bus.on("joystick:move", (p: { x: number; y: number }) => {
+        this.joy = p;
+      }),
+      bus.on(BusEvents.PhotoMode, (p: { enabled: boolean }) => this.setPhotoMode(p.enabled))
     );
 
     bus.emit(BusEvents.WorldEntered, {
@@ -225,6 +234,7 @@ export class WorldScene extends Phaser.Scene {
         false,
         () => bus.emit(BusEvents.PlayerClicked, { sessionId, name: player.name })
       );
+      if (this.photoMode) actor.setLabelVisible(false);
       this.remotes.set(sessionId, actor);
       this.emitRoster();
       $(player).onChange(() => {
@@ -304,6 +314,25 @@ export class WorldScene extends Phaser.Scene {
     } catch {
       // presence is cosmetic — ignore transient failures
     }
+  }
+
+  /**
+   * Photo mode: hide name labels and gently push the camera in for a
+   * cleaner, more cinematic frame. The HUD chrome is hidden on the React
+   * side; here we only touch what lives inside the canvas.
+   */
+  private setPhotoMode(enabled: boolean) {
+    this.photoMode = enabled;
+    this.self?.setLabelVisible(!enabled);
+    this.remotes.forEach((a) => a.setLabelVisible(!enabled));
+    const cam = this.cameras.main;
+    const base = Math.max(1, cam.width / this.mapDef.width, cam.height / this.mapDef.height);
+    this.tweens.add({
+      targets: cam,
+      zoom: enabled ? base * 1.35 : base,
+      duration: 600,
+      ease: "sine.inout",
+    });
   }
 
   /** Soft radial vignette pinned to the camera — pure mood, nearly free. */
@@ -386,8 +415,10 @@ export class WorldScene extends Phaser.Scene {
   // Update loop
   // -------------------------------------------------------------------------
 
-  update(time: number) {
+  update(time: number, delta: number) {
     if (!this.self || !this.selfBody || this.traveling) return;
+
+    this.npcs?.update(time, delta);
 
     // --- local movement (frozen while typing into the chat input) ---
     const typing =
@@ -401,11 +432,18 @@ export class WorldScene extends Phaser.Scene {
       if (k.right.isDown || k.d.isDown) vx += 1;
       if (k.up.isDown || k.w.isDown) vy -= 1;
       if (k.down.isDown || k.s.isDown) vy += 1;
+      // Analog joystick (touch) adds in; overrides keys when pushed.
+      if (Math.hypot(this.joy.x, this.joy.y) > 0.2) {
+        vx = this.joy.x;
+        vy = this.joy.y;
+      }
     }
-    const moving = vx !== 0 || vy !== 0;
+    const mag = Math.hypot(vx, vy);
+    const moving = mag > 0.001;
     if (moving) {
-      const len = Math.hypot(vx, vy);
-      this.selfBody.setVelocity((vx / len) * PLAYER_SPEED, (vy / len) * PLAYER_SPEED);
+      // Preserve analog magnitude (a gentle push walks slower), capped at 1.
+      const speedScale = Math.min(1, mag);
+      this.selfBody.setVelocity((vx / mag) * PLAYER_SPEED * speedScale, (vy / mag) * PLAYER_SPEED * speedScale);
     } else {
       this.selfBody.setVelocity(0, 0);
     }
@@ -485,5 +523,7 @@ export class WorldScene extends Phaser.Scene {
     this.bubbles = undefined;
     this.weather?.destroy();
     this.weather = undefined;
+    this.npcs?.destroy();
+    this.npcs = undefined;
   }
 }
