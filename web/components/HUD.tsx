@@ -7,6 +7,7 @@ import { ChatPanel } from "./ChatPanel";
 import { EmoteBar } from "./EmoteBar";
 import { SettingsMenu } from "./SettingsMenu";
 import { EventToast } from "./EventToast";
+import { PlayerSheet } from "./PlayerSheet";
 
 /**
  * React overlay above the Phaser canvas: location badge, travel picker,
@@ -55,6 +56,7 @@ export function HUD() {
           <EmoteBar />
           <SettingsMenu />
           <EventToast />
+          <PlayerSheet />
         </>
       )}
 

@@ -150,6 +150,12 @@ export class WorldScene extends Phaser.Scene {
     });
 
     this.busUnsubs.push(
+      bus.on(BusEvents.ReportPlayer, (p: { targetSessionId: string }) => {
+        this.room?.send("report", { targetSessionId: p.targetSessionId });
+      }),
+      bus.on(BusEvents.BlockPlayer, (p: { targetSessionId: string }) => {
+        this.room?.send("block", { targetSessionId: p.targetSessionId });
+      }),
       bus.on(BusEvents.TravelTo, (p: { mapId: string }) => this.travel(p.mapId)),
       bus.on(BusEvents.ActionSend, (p: { action: string }) => this.doAction(p.action)),
       bus.on(BusEvents.ChatSend, (p: { text: string }) => {
@@ -216,7 +222,8 @@ export class WorldScene extends Phaser.Scene {
         player.name,
         player.x,
         player.y,
-        false
+        false,
+        () => bus.emit(BusEvents.PlayerClicked, { sessionId, name: player.name })
       );
       this.remotes.set(sessionId, actor);
       this.emitRoster();
@@ -246,7 +253,13 @@ export class WorldScene extends Phaser.Scene {
       const actor = msg.sessionId === room.sessionId ? this.self : this.remotes.get(msg.sessionId);
       if (actor && this.bubbles) this.bubbles.emote(actor, msg.emote);
     });
-    room.onMessage("moderation-ack", () => {});
+    room.onMessage("moderation-ack", (msg: { kind: string; targetSessionId: string }) => {
+      bus.emit(BusEvents.ModerationDone, msg);
+      // The pair is now blocked server-side; move to a fresh instance of
+      // this map so the two never share a room again (onAuth enforces it
+      // for all future joins).
+      this.relocate();
+    });
 
     // Live weather + ambient world events from room state.
     $(room.state).listen("weather", (weather: string) => {
@@ -323,6 +336,19 @@ export class WorldScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
   // Travel & actions
   // -------------------------------------------------------------------------
+
+  /** Rejoin the current map in a fresh room instance (post report/block). */
+  private relocate() {
+    if (this.traveling || this.destroyed) return;
+    this.traveling = true;
+    this.cameras.main.fadeOut(280, 28, 26, 36);
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.room?.removeAllListeners();
+      this.room?.leave();
+      this.room = undefined;
+      this.scene.restart({ mapId: this.mapId } satisfies SceneData);
+    });
+  }
 
   private travel(mapId: string, spawnAt?: { x: number; y: number }) {
     if (this.traveling || this.destroyed || mapId === this.mapId) return;

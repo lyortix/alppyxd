@@ -38,6 +38,8 @@ export const BusEvents = {
   ChatReceived: "chat:received", // { sessionId, name, text, self }
   EventAnnounce: "event:announce", // { text } "" = cleared
   GameError: "game:error", // { message }
+  PlayerClicked: "player:clicked", // { sessionId, name }
+  ModerationDone: "moderation:done", // { kind, targetSessionId }
   // React -> Phaser
   ChatSend: "chat:send", // { text }
   EmoteSend: "emote:send", // { emote }

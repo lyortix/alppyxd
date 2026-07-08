@@ -14,7 +14,8 @@ const BLACKLIST = [
   "sikeyim", "göt", "got", "ibne", "kahpe", "sürtük", "surtuk", "amcik",
   "amcık", "oç", "oc", "gavat", "puşt", "pust",
   "fuck", "shit", "bitch", "asshole", "cunt", "whore", "slut", "nigger",
-  "nigga", "faggot", "retard",
+  "nigga", "faggot", "retard", "kys", "rape", "rapist", "nazi", "hitler",
+  "porn", "pedo", "molest", "dick", "pussy", "cock", "tits",
 ];
 
 const LEET_MAP: Record<string, string> = {

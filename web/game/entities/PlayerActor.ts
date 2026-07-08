@@ -33,7 +33,15 @@ export class PlayerActor {
   action = "";
   private waveUntil = 0;
 
-  constructor(scene: Phaser.Scene, recipe: AvatarRecipe, name: string, x: number, y: number, isSelf: boolean) {
+  constructor(
+    scene: Phaser.Scene,
+    recipe: AvatarRecipe,
+    name: string,
+    x: number,
+    y: number,
+    isSelf: boolean,
+    onClick?: () => void
+  ) {
     this.scene = scene;
     this.texKey = ensureCharacter(scene, recipe);
     this.targetX = x;
@@ -53,6 +61,10 @@ export class PlayerActor {
 
     this.container = scene.add.container(x, y, [this.shadow, this.sprite, this.label]);
     this.container.setDepth(y);
+    if (onClick) {
+      this.sprite.setInteractive({ useHandCursor: true });
+      this.sprite.on(Phaser.Input.Events.POINTER_DOWN, onClick);
+    }
     this.playCurrent();
   }
 

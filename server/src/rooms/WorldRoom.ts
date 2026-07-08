@@ -1,7 +1,7 @@
 import { Room, Client } from "colyseus";
 import { WorldState, Player } from "./schema/WorldState";
 import { getMap, MapConfig } from "../config/maps";
-import { moderateMessage } from "../moderation/profanityFilter";
+import { moderateMessage, containsProfanity } from "../moderation/profanityFilter";
 import { reportAndBlock, blockPair, isBlockedPair } from "../moderation/store";
 import { scheduleWorldEvents } from "../systems/worldEvents";
 
@@ -149,7 +149,8 @@ export class WorldRoom extends Room<WorldState> {
   onJoin(client: Client, options: JoinOptions) {
     this.deviceIdBySession.set(client.sessionId, options.deviceId);
     const player = new Player();
-    player.name = moderateMessage(options.name).slice(0, MAX_NAME_LENGTH) || "stranger";
+    const rawName = options.name.trim().slice(0, MAX_NAME_LENGTH);
+    player.name = !rawName || containsProfanity(rawName) ? "stranger" : rawName;
     player.body = clampIndex(options.body, 3);
     player.palette = clampIndex(options.palette, 8);
     player.accessory = clampIndex(options.accessory, 5);
