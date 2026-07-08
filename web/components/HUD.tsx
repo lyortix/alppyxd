@@ -1,112 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { bus, BusEvents, Occupant } from "@/game/net/bus";
+import { bus, BusEvents } from "@/game/net/bus";
 
-type View = "neighborhood" | "house";
-
+/**
+ * React overlay above the Phaser canvas. Phase 1 scope: current location
+ * badge + connection errors. Chat panel, emotes, settings and photo mode
+ * arrive with their phases.
+ */
 export function HUD() {
-  const [view, setView] = useState<View>("neighborhood");
-  const [houseName, setHouseName] = useState("");
-  const [occupants, setOccupants] = useState<Occupant[]>([]);
-  const [chatText, setChatText] = useState("");
+  const [location, setLocation] = useState<{ label: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const onNeighborhood = () => setView("neighborhood");
-    const onHouse = ({ houseName }: { houseId: string; houseName: string }) => {
-      setView("house");
-      setHouseName(houseName);
-    };
-    const onOccupants = ({ occupants }: { occupants: Occupant[] }) => setOccupants(occupants);
-    const onError = ({ message }: { message: string }) => {
-      setError(message);
-      setTimeout(() => setError(null), 4000);
-    };
-
-    bus.on(BusEvents.ViewNeighborhood, onNeighborhood);
-    bus.on(BusEvents.ViewHouse, onHouse);
-    bus.on(BusEvents.OccupantsUpdate, onOccupants);
-    bus.on(BusEvents.GameError, onError);
-    return () => {
-      bus.off(BusEvents.ViewNeighborhood, onNeighborhood);
-      bus.off(BusEvents.ViewHouse, onHouse);
-      bus.off(BusEvents.OccupantsUpdate, onOccupants);
-      bus.off(BusEvents.GameError, onError);
-    };
+    const offs = [
+      bus.on(BusEvents.WorldEntered, (p: { label: string }) => setLocation(p)),
+      bus.on(BusEvents.GameError, (p: { message: string }) => setError(p.message)),
+    ];
+    return () => offs.forEach((off) => off());
   }, []);
 
-  function sendChat() {
-    const text = chatText.trim();
-    if (!text) return;
-    bus.emit(BusEvents.ChatSend, { text });
-    setChatText("");
-  }
-
-  function reportOccupant(occupant: Occupant) {
-    const confirmed = window.confirm(
-      `${occupant.name} adlı kişiyi bildirmek istediğine emin misin? Bir daha eşleşmeyeceksiniz.`
-    );
-    if (!confirmed) return;
-    bus.emit(BusEvents.ReportSend, { targetSessionId: occupant.sessionId });
-  }
-
   return (
-    <div className="hud">
-      {view === "neighborhood" && (
-        <div className="hud-hint">Yürümek için WASD / ok tuşları · Eve girmek için E veya tıkla</div>
+    <div className="pointer-events-none absolute inset-0 text-[#f2ecdf]">
+      {location && (
+        <div className="absolute top-4 left-4 rounded-full bg-[#1c1a24]/70 backdrop-blur border border-white/10 px-4 py-1.5 text-sm">
+          📍 {location.label}
+        </div>
       )}
-
-      {view === "house" && (
-        <div className="hud-house-panel">
-          <div className="hud-house-header">
-            <span className="hud-house-name">{houseName}</span>
-            <span className="hud-house-count">{occupants.length + 1} kişi</span>
-            <button className="hud-leave-btn" onClick={() => bus.emit(BusEvents.LeaveHouse)}>
-              Çık
-            </button>
-          </div>
-
-          {occupants.length > 0 && (
-            <div className="hud-occupants">
-              {occupants.map((o) => (
-                <span key={o.sessionId} className="hud-occupant-chip">
-                  {o.name}
-                  <button
-                    className="hud-report-btn"
-                    title="Bildir"
-                    onClick={() => reportOccupant(o)}
-                  >
-                    ⚑
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-
-          <div className="hud-chat-row">
-            <input
-              className="text-input hud-chat-input"
-              value={chatText}
-              maxLength={140}
-              placeholder="Bir şeyler yaz..."
-              onChange={(e) => setChatText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") sendChat();
-              }}
-            />
-            <button className="hud-send-btn" onClick={sendChat}>
-              Gönder
+      {error && (
+        <div className="absolute inset-x-0 top-1/3 flex justify-center px-4">
+          <div className="pointer-events-auto rounded-2xl bg-[#3a2430]/95 border border-[#ff8f8f]/30 px-6 py-4 text-center shadow-xl">
+            <p>{error}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-3 rounded-lg bg-[#ff8f8f] text-[#2c2430] px-4 py-1.5 text-sm font-semibold"
+            >
+              reload
             </button>
           </div>
         </div>
       )}
-
-      {error && <div className="hud-error-toast">{error}</div>}
-
-      <div className="privacy-footer">
-        İsim ve yaş dışında kişisel veri toplanmaz. Kimliğiniz anonim bir cihaz kimliğiyle temsil edilir.
-      </div>
     </div>
   );
 }

@@ -1,0 +1,28 @@
+import * as Phaser from "phaser";
+import { WorldScene } from "./scenes/WorldScene";
+import type { JoinProfile } from "./net/connection";
+import { GAME_BG_COLOR } from "./config";
+
+/**
+ * Boots the Phaser game into `parent`, filling it (RESIZE scale mode — the
+ * React shell owns layout, the canvas just fills whatever box it gets, which
+ * is also what makes mobile "just work"). The profile rides in the registry
+ * so any scene can reach it.
+ */
+export function createGame(parent: HTMLElement, profile: JoinProfile, mapId: string): Phaser.Game {
+  const game = new Phaser.Game({
+    type: Phaser.AUTO,
+    parent,
+    backgroundColor: GAME_BG_COLOR,
+    physics: { default: "arcade", arcade: { gravity: { x: 0, y: 0 }, debug: false } },
+    scale: {
+      mode: Phaser.Scale.RESIZE,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
+    render: { antialias: true, pixelArt: false },
+    scene: [],
+  });
+  game.registry.set("profile", profile);
+  game.scene.add("World", WorldScene, true, { mapId });
+  return game;
+}

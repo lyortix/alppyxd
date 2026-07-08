@@ -1,31 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { LoginScreen } from "./LoginScreen";
+import { IntroScreen } from "./IntroScreen";
 import { GameCanvas } from "./GameCanvas";
 import { HUD } from "./HUD";
 import { getDeviceId } from "@/lib/deviceId";
-
-interface Identity {
-  name: string;
-  age: number;
-  deviceId: string;
-}
+import { DEFAULT_MAP_ID } from "@/game/data/maps";
+import type { JoinProfile } from "@/game/net/connection";
 
 export function App() {
-  const [identity, setIdentity] = useState<Identity | null>(null);
+  const [profile, setProfile] = useState<JoinProfile | null>(null);
 
-  if (!identity) {
+  if (!profile) {
     return (
-      <LoginScreen
-        onEnter={(name, age) => setIdentity({ name, age, deviceId: getDeviceId() })}
+      <IntroScreen
+        onEnter={(name, avatar) => setProfile({ name, deviceId: getDeviceId(), ...avatar })}
       />
     );
   }
 
   return (
-    <div className="game-shell">
-      <GameCanvas name={identity.name} deviceId={identity.deviceId} />
+    <div className="fixed inset-0 bg-[#1c1a24]">
+      <GameCanvas profile={profile} mapId={DEFAULT_MAP_ID} />
       <HUD />
     </div>
   );

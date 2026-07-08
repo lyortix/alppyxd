@@ -58,6 +58,6 @@ const CONTROL_CHARS = new RegExp("[\\u0000-\\u001F\\u007F]", "g");
 export function moderateMessage(rawMessage: string): string {
   const trimmed = rawMessage.replace(CONTROL_CHARS, "").trim().slice(0, 140);
   if (!trimmed) return "";
-  if (containsProfanity(trimmed)) return "[mesaj filtrelendi]";
+  if (containsProfanity(trimmed)) return "[message filtered]";
   return trimmed;
 }
