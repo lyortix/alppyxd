@@ -6,6 +6,7 @@ import { joinMap, fetchPresence, type JoinProfile } from "../net/connection";
 import { PlayerActor } from "../entities/PlayerActor";
 import { drawGround, drawLightOverlay } from "../render/ground";
 import { buildWorld, type BuiltWorld } from "../systems/worldBuilder";
+import { BubbleSystem } from "../systems/bubbles";
 import { bus, BusEvents } from "../net/bus";
 import { PLAYER_SPEED, MOVE_SEND_INTERVAL_MS, GAME_BG_COLOR, PRESENCE_POLL_MS } from "../config";
 
@@ -42,6 +43,7 @@ export class WorldScene extends Phaser.Scene {
   private remotes = new Map<string, PlayerActor>();
   private keys!: MoveKeys;
   private world?: BuiltWorld;
+  private bubbles?: BubbleSystem;
   private signTexts: Phaser.GameObjects.Text[] = [];
   private lastSent = { x: 0, y: 0, dir: "down", moving: false };
   private nextSendAt = 0;
@@ -93,6 +95,7 @@ export class WorldScene extends Phaser.Scene {
     drawGround(this, this.mapDef);
     this.world = buildWorld(this, this.mapDef);
     drawLightOverlay(this, this.mapDef);
+    this.bubbles = new BubbleSystem(this);
 
     // Sign bubbles: hidden until the player walks close.
     this.signTexts = this.mapDef.signs.map((s) =>
@@ -125,6 +128,9 @@ export class WorldScene extends Phaser.Scene {
 
     const kb = this.input.keyboard!;
     this.keys = kb.addKeys("up,down,left,right,w,a,s,d,e") as MoveKeys;
+    // The page never scrolls, and captured keys would block typing into the
+    // React chat input — let every key event through.
+    kb.disableGlobalCapture();
 
     // Arriving through a door: brief immunity so the exit mat under our feet
     // doesn't instantly bounce us back.
@@ -140,7 +146,14 @@ export class WorldScene extends Phaser.Scene {
 
     this.busUnsubs.push(
       bus.on(BusEvents.TravelTo, (p: { mapId: string }) => this.travel(p.mapId)),
-      bus.on(BusEvents.ActionSend, (p: { action: string }) => this.doAction(p.action))
+      bus.on(BusEvents.ActionSend, (p: { action: string }) => this.doAction(p.action)),
+      bus.on(BusEvents.ChatSend, (p: { text: string }) => {
+        const text = p?.text?.trim();
+        if (text) this.room?.send("chat", { text });
+      }),
+      bus.on(BusEvents.EmoteSend, (p: { emote: string }) => {
+        this.room?.send("emote", { emote: p.emote });
+      })
     );
 
     bus.emit(BusEvents.WorldEntered, {
@@ -217,10 +230,15 @@ export class WorldScene extends Phaser.Scene {
       this.emitRoster();
     });
 
-    // Registered now so Colyseus doesn't warn; the social phase wires these
-    // into bubbles/emote pops.
-    room.onMessage("chat", () => {});
-    room.onMessage("emote", () => {});
+    room.onMessage("chat", (msg: { sessionId: string; name: string; text: string }) => {
+      const actor = msg.sessionId === room.sessionId ? this.self : this.remotes.get(msg.sessionId);
+      if (actor && this.bubbles) this.bubbles.say(actor, msg.text);
+      bus.emit(BusEvents.ChatReceived, { ...msg, self: msg.sessionId === room.sessionId });
+    });
+    room.onMessage("emote", (msg: { sessionId: string; emote: string }) => {
+      const actor = msg.sessionId === room.sessionId ? this.self : this.remotes.get(msg.sessionId);
+      if (actor && this.bubbles) this.bubbles.emote(actor, msg.emote);
+    });
     room.onMessage("moderation-ack", () => {});
 
     room.onLeave(() => {
@@ -300,14 +318,19 @@ export class WorldScene extends Phaser.Scene {
   update(time: number) {
     if (!this.self || !this.selfBody || this.traveling) return;
 
-    // --- local movement ---
+    // --- local movement (frozen while typing into the chat input) ---
+    const typing =
+      typeof document !== "undefined" &&
+      (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA");
     const k = this.keys;
     let vx = 0;
     let vy = 0;
-    if (k.left.isDown || k.a.isDown) vx -= 1;
-    if (k.right.isDown || k.d.isDown) vx += 1;
-    if (k.up.isDown || k.w.isDown) vy -= 1;
-    if (k.down.isDown || k.s.isDown) vy += 1;
+    if (!typing) {
+      if (k.left.isDown || k.a.isDown) vx -= 1;
+      if (k.right.isDown || k.d.isDown) vx += 1;
+      if (k.up.isDown || k.w.isDown) vy -= 1;
+      if (k.down.isDown || k.s.isDown) vy += 1;
+    }
     const moving = vx !== 0 || vy !== 0;
     if (moving) {
       const len = Math.hypot(vx, vy);
@@ -325,7 +348,7 @@ export class WorldScene extends Phaser.Scene {
     this.self.setLocal(this.self.container.x, this.self.container.y, dir, moving, action);
 
     // E to sit on a nearby bench/chair
-    if (Phaser.Input.Keyboard.JustDown(this.keys.e)) {
+    if (!typing && Phaser.Input.Keyboard.JustDown(this.keys.e)) {
       this.doAction(this.self.action === "sit" ? "" : "sit");
     }
 
@@ -373,6 +396,8 @@ export class WorldScene extends Phaser.Scene {
     for (const actor of this.remotes.values()) {
       actor.updateRemote();
     }
+
+    this.bubbles?.update();
   }
 
   private teardown() {
@@ -385,5 +410,7 @@ export class WorldScene extends Phaser.Scene {
     this.room = undefined;
     this.remotes.forEach((a) => a.destroy());
     this.remotes.clear();
+    this.bubbles?.destroy();
+    this.bubbles = undefined;
   }
 }

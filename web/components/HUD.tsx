@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { bus, BusEvents } from "@/game/net/bus";
 import { TravelPicker } from "./TravelPicker";
+import { ChatPanel } from "./ChatPanel";
+import { EmoteBar } from "./EmoteBar";
 
 /**
  * React overlay above the Phaser canvas: location badge, travel picker,
@@ -43,6 +45,13 @@ export function HUD() {
 
       {showTravel && location && (
         <TravelPicker currentMapId={location.mapId} onClose={() => setShowTravel(false)} />
+      )}
+
+      {location && (
+        <>
+          <ChatPanel />
+          <EmoteBar />
+        </>
       )}
 
       {error && (
