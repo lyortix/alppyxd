@@ -1,12 +1,10 @@
-export type Occupant = { sessionId: string; name: string };
-
 type Listener = (payload?: any) => void;
 
 /**
- * Thin event bridge between the React UI shell (login, HUD) and the Phaser
+ * Thin event bridge between the React UI shell (intro, HUD) and the Phaser
  * scenes running inside the single canvas. React never touches game state
- * directly; it only emits intents ("send this chat message") and reacts to
- * facts the scenes publish ("you're now inside house X").
+ * directly; it emits intents ("send this chat message") and reacts to facts
+ * the scenes publish ("you entered the café").
  *
  * A tiny hand-rolled emitter rather than Phaser's — this module is imported
  * from "use client" components that still render once on the server, and
@@ -16,9 +14,10 @@ type Listener = (payload?: any) => void;
 class Bus {
   private listeners = new Map<string, Set<Listener>>();
 
-  on(event: string, listener: Listener) {
+  on(event: string, listener: Listener): () => void {
     if (!this.listeners.has(event)) this.listeners.set(event, new Set());
     this.listeners.get(event)!.add(listener);
+    return () => this.off(event, listener);
   }
 
   off(event: string, listener: Listener) {
@@ -33,11 +32,21 @@ class Bus {
 export const bus = new Bus();
 
 export const BusEvents = {
-  ViewNeighborhood: "view:neighborhood",
-  ViewHouse: "view:house", // { houseId, houseName }
-  OccupantsUpdate: "occupants:update", // { occupants: Occupant[] }
-  ChatSend: "chat:send", // { text }
-  ReportSend: "report:send", // { targetSessionId }
-  LeaveHouse: "leave:house",
+  // Phaser -> React
+  WorldEntered: "world:entered", // { mapId, label, kind }
+  RosterUpdate: "roster:update", // { players: {sessionId, name}[], selfId }
+  ChatReceived: "chat:received", // { sessionId, name, text, self }
+  EventAnnounce: "event:announce", // { text } "" = cleared
   GameError: "game:error", // { message }
+  PlayerClicked: "player:clicked", // { sessionId, name }
+  ModerationDone: "moderation:done", // { kind, targetSessionId }
+  // React -> Phaser
+  ChatSend: "chat:send", // { text }
+  EmoteSend: "emote:send", // { emote }
+  ActionSend: "action:send", // { action } "sit" | "dance" | ""
+  TravelTo: "travel:to", // { mapId }
+  ReportPlayer: "report:player", // { targetSessionId }
+  BlockPlayer: "block:player", // { targetSessionId }
+  PhotoMode: "photo:mode", // { enabled }
+  AudioSettings: "audio:settings", // { music, sfx } booleans
 } as const;

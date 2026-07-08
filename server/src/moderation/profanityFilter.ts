@@ -14,7 +14,8 @@ const BLACKLIST = [
   "sikeyim", "göt", "got", "ibne", "kahpe", "sürtük", "surtuk", "amcik",
   "amcık", "oç", "oc", "gavat", "puşt", "pust",
   "fuck", "shit", "bitch", "asshole", "cunt", "whore", "slut", "nigger",
-  "nigga", "faggot", "retard",
+  "nigga", "faggot", "retard", "kys", "rape", "rapist", "nazi", "hitler",
+  "porn", "pedo", "molest", "dick", "pussy", "cock", "tits",
 ];
 
 const LEET_MAP: Record<string, string> = {
@@ -58,6 +59,6 @@ const CONTROL_CHARS = new RegExp("[\\u0000-\\u001F\\u007F]", "g");
 export function moderateMessage(rawMessage: string): string {
   const trimmed = rawMessage.replace(CONTROL_CHARS, "").trim().slice(0, 140);
   if (!trimmed) return "";
-  if (containsProfanity(trimmed)) return "[mesaj filtrelendi]";
+  if (containsProfanity(trimmed)) return "[message filtered]";
   return trimmed;
 }
